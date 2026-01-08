@@ -1,9 +1,5 @@
-#ifndef _LWIPOPTS_EXAMPLE_COMMONH_H
-#define _LWIPOPTS_EXAMPLE_COMMONH_H
-
-
-// Common settings used in most of the pico_w examples
-// (see https://www.nongnu.org/lwip/2_1_x/group__lwip__opts.html for details)
+#ifndef _LWIPOPTS_H
+#define _LWIPOPTS_H
 
 // allow override in some examples
 #ifndef NO_SYS
@@ -34,10 +30,9 @@
 #define TCP_MSS                     1460
 #define TCP_SND_BUF                 (8 * TCP_MSS)
 #define TCP_SND_QUEUELEN            ((4 * (TCP_SND_BUF) + (TCP_MSS - 1)) / (TCP_MSS))
-#define LWIP_NETIF_STATUS_CALLBACK  1
-#define LWIP_NETIF_EXT_STATUS_CALLBACK  1
-#define LWIP_NETIF_LINK_CALLBACK    1
-#define LWIP_NETIF_HOSTNAME         1
+#define LWIP_NETIF_STATUS_CALLBACK  0
+#define LWIP_NETIF_LINK_CALLBACK    0
+#define LWIP_NETIF_HOSTNAME         0
 #define LWIP_NETCONN                0
 #define MEM_STATS                   0
 #define SYS_STATS                   0
@@ -89,5 +84,45 @@
 #define PPP_DEBUG                   LWIP_DBG_OFF
 #define SLIP_DEBUG                  LWIP_DBG_OFF
 #define DHCP_DEBUG                  LWIP_DBG_OFF
+
+#define LWIP_NETIF_EXT_STATUS_CALLBACK     1
+
+// --- two extra system timeouts (MQTT + SNTP) ---
+#define MEMP_NUM_SYS_TIMEOUT        (LWIP_NUM_SYS_TIMEOUT_INTERNAL + 2)
+
+// --- lwIP MQTT settings ---
+#define MQTT_REQ_MAX_IN_FLIGHT      5
+#define MQTT_OUTPUT_RINGBUF_SIZE    256     // transmit buffer size: at least (max_topic + max_data)
+#define MQTT_VAR_HEADER_BUFFER_LEN  128     // receive buffer size: to avoid frags at least (max_topic + max_data + 8)
+
+// --- lwIP SNTP settings ---
+#define SNTP_MAX_SERVERS            LWIP_DHCP_MAX_NTP_SERVERS
+#define SNTP_GET_SERVERS_FROM_DHCP  LWIP_DHCP_GET_NTP_SRV
+#define SNTP_SERVER_DNS             1
+#define SNTP_SERVER_ADDRESS         "pool.ntp.org"
+#define SNTP_DEBUG                  LWIP_DBG_OFF
+#define SNTP_PORT                   LWIP_IANA_PORT_SNTP
+//* SNTP_CHECK_RESPONSE >= 2 requires SNTP_GET_SYSTEM_TIME()
+#define SNTP_CHECK_RESPONSE         2
+//* SNTP_COMP_ROUNDTRIP requires SNTP_GET_SYSTEM_TIME()
+#define SNTP_COMP_ROUNDTRIP         1
+#define SNTP_STARTUP_DELAY          1
+#define SNTP_STARTUP_DELAY_FUNC     (LWIP_RAND() % 5000)
+#define SNTP_RECV_TIMEOUT           15000
+//* time between queries (millisec)
+#define SNTP_UPDATE_DELAY           3600000
+#define SNTP_RETRY_TIMEOUT          SNTP_RECV_TIMEOUT
+#define SNTP_RETRY_TIMEOUT_MAX      (SNTP_RETRY_TIMEOUT * 10)
+#define	SNTP_RETRY_TIMEOUT_EXP      1
+#define SNTP_MONITOR_SERVER_REACHABILITY    1
+
+//* configure SNTP to use our callback functions for reading and setting the system time
+#define SNTP_GET_SYSTEM_TIME(sec, us)  sntp_get_system_time_us(&(sec), &(us))
+#define SNTP_SET_SYSTEM_TIME_US(sec, us)   sntp_set_system_time_us(sec, us)
+
+//* declare our callback functions (the implementations are in the .c file)
+#include "stdint.h"
+void sntp_set_system_time_us(uint32_t sec, uint32_t us);
+void sntp_get_system_time_us(uint32_t *sec_ptr, uint32_t *us_ptr);
 
 #endif /* __LWIPOPTS_H__ */
