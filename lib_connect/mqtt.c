@@ -4,11 +4,11 @@
 #include "string.h"
 #include "pico/unique_id.h"
 #include "lwip/apps/mqtt_priv.h"    // mqtt_client_t
+#include "lwip/dns.h"
 
 #include "settings.h"
 #include "connect.h"
 #include "mqtt.h"
-#include "lwip/dns.h"
 
 // type definitions
 typedef struct {
@@ -43,7 +43,7 @@ static void mqtt_sub_request_cb(void *arg, err_t err) {
 }
 
 // called by lwIP MQTT when something is published to a subscribed topic
-void mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len) {
+static void mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len) {
     mqtt_msg_buf_t *msg = (mqtt_msg_buf_t *)arg;
     if (strlcpy(msg->topic, topic, sizeof(msg->topic)) >= sizeof(msg->topic)) {
         puts("MQTT topic truncated");
@@ -54,7 +54,7 @@ void mqtt_incoming_publish_cb(void *arg, const char *topic, u32_t tot_len) {
 
 // called by lwIP MQTT with the payload of an incoming message
 // may be called multiple times if the payload won't fit into a single buffer
-void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t flags) {
+static void mqtt_incoming_data_cb(void *arg, const u8_t *data, u16_t len, u8_t flags) {
     mqtt_msg_buf_t *msg = (mqtt_msg_buf_t *)arg;
     printf("%d bytes for topic %s (core %d)\n", len, msg->topic, get_core_num());
     if (msg->len + len > sizeof(msg->data)) {
@@ -95,7 +95,7 @@ static void mqtt_subscribe_worker_cb(async_context_t *ctx, async_at_time_worker_
     }
 }
 
-void mqtt_connect_cb(async_context_t *ctx, async_at_time_worker_t *p_mqtt_connect_worker) {
+static void mqtt_connect_cb(async_context_t *ctx, async_at_time_worker_t *p_mqtt_connect_worker) {
     if (network_is_up) {
         // the mqtt_connect_client_info is passed in p_mqtt_connect_worker->user_data
         printf("mqtt_connect_worker_cb: connecting as %s\n", mqtt_connect_client_info.client_id);
@@ -147,7 +147,7 @@ static void mqtt_connection_cb(mqtt_client_t *client, void *userdata, mqtt_conne
     }
 }
 
-void dns_query_cb(const char *hostname, const ip_addr_t *addr_ptr, void *arg) {
+static void dns_query_cb(const char *hostname, const ip_addr_t *addr_ptr, void *arg) {
     async_at_time_worker_t *p_dns_lookup_worker = (async_at_time_worker_t *)arg;
     if (addr_ptr) {
         mqtt_server_ip = *addr_ptr;
@@ -161,7 +161,7 @@ void dns_query_cb(const char *hostname, const ip_addr_t *addr_ptr, void *arg) {
 }
 
 // look up MQTT server address
-void get_server_ip(async_context_t *ctx, async_at_time_worker_t *p_worker) {
+static void get_server_ip(async_context_t *ctx, async_at_time_worker_t *p_worker) {
     printf("dns lookup %s\n", MQTT_SERVER);
     err_t result = dns_gethostbyname(MQTT_SERVER, &mqtt_server_ip, dns_query_cb, p_worker);
     if (result == ERR_OK) {
