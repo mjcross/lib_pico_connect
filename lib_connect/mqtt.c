@@ -190,6 +190,7 @@ void start_mqtt() {
         printf("MQTT client id %s\n", mqtt_connect_client_info.client_id);
     }
 
+    // link to our functions for incoming and outgoing messages
     mqtt_set_inpub_callback(&mqtt_client, mqtt_incoming_publish_cb, mqtt_incoming_data_cb, &mqtt_msg_buf);
 
     // look up the MQTT server IP and start a connection

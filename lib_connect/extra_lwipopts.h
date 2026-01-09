@@ -1,3 +1,5 @@
+#define NODEBUG // suppress debug "noise"
+
 // --- allow the 'extended' network status callback
 #define LWIP_NETIF_EXT_STATUS_CALLBACK     1
 
@@ -18,8 +20,15 @@
 #define SNTP_PORT                   LWIP_IANA_PORT_SNTP
 //* SNTP_CHECK_RESPONSE >= 2 requires SNTP_GET_SYSTEM_TIME()
 #define SNTP_CHECK_RESPONSE         2
-//* SNTP_COMP_ROUNDTRIP requires SNTP_GET_SYSTEM_TIME()
-#define SNTP_COMP_ROUNDTRIP         1
+
+// do NOT use SNTP roundtrip compensation with the rp2040 aon_timer
+// because it has a resolution of only 1 second (see CMakeLists.txt)
+#ifdef DISABLE_SNTP_COMP_ROUNDTRIP
+#define   SNTP_COMP_ROUNDTRIP       0
+#else
+#define   SNTP_COMP_ROUNDTRIP       1
+#endif
+
 #define SNTP_STARTUP_DELAY          1
 #define SNTP_STARTUP_DELAY_FUNC     (LWIP_RAND() % 5000)
 #define SNTP_RECV_TIMEOUT           15000

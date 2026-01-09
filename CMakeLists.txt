@@ -58,5 +58,11 @@ target_include_directories(lib_pico_connect PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
+# disable SNTP round-trip compensation on RP2040 because its aon_timer
+# has a resolution of only 1 second which messes up the timestamps
+if(${PICO_PLATFORM} MATCHES "rp2040")
+        add_compile_definitions(DISABLE_SNTP_COMP_ROUNDTRIP)
+endif()
+
 # generate extra output files (.map, .hex etc)
 pico_add_extra_outputs(lib_pico_connect)

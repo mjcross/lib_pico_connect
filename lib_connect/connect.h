@@ -1,7 +1,8 @@
 #ifndef _CONNECT_H
 #define _CONNECT_H
 
-#include "pico/cyw43_arch.h"
+#include "pico/async_context.h"
+#include "sntp.h"   // include public API for SNTP
 
 // public API
 extern volatile bool network_is_up;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
+#include "pico/async_context.h"
 #include "lwip/netif.h"         // for netif_ext_callback_t
 #include "lwip/inet.h"          // for inet_ntoa()
 
@@ -16,18 +17,18 @@ async_context_t *ctx = NULL;
 // network status callback
 // start and stop the services when the network goes up or down
 static void network_status_cb(struct netif *netif, u16_t reason, const netif_ext_callback_args_t *args) {
+    // DCHP done: network 'up'
     if (reason & LWIP_NSC_IPV4_ADDR_VALID) {
-        // we were given an IP address
         printf("netif_ext_cb: given IP %s\n", inet_ntoa(netif->ip_addr.addr));
         network_is_up = true;
         start_mqtt();
-        // todo: start the SNTP client
+        start_sntp();
     }
+    // link lost: network 'down'
     if (reason & LWIP_NSC_LINK_CHANGED && args->link_changed.state == 0) {
-        // the link went down
         puts("netif_ext_cb: link down");
         network_is_up = false;
-        // todo: stop the SNTP client
+        stop_sntp();
     }
 }
 

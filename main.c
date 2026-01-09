@@ -1,9 +1,13 @@
 #include <stdio.h>
+#include <stdlib.h>     // for setenv()
 #include "pico/stdlib.h"
 #include "lib_connect/connect.h"
 
-//! NOTE: the library requires some extra lwIP options but
-//!       a project can only have one lwipopts.h file
+#define POSIX_TIMEZONE "BST0GMT,M3.5.0/1,M10.5.0/2"     // POSIX timezone for UK GMT/BST 
+
+// Note: the library requires some additional configuration options
+// for lwIP, so be sure to #include lib_connect/extra_lwipopts.h in
+// your lwipopts.h file.
 
 int main()
 {
@@ -12,5 +16,22 @@ int main()
     puts("connecting");
     connect();
 
-    while(true) sleep_ms(1000);
+    // set up timestamp
+    struct timespec ts;
+    struct tm tm;
+    char timestamp[20];
+    setenv("TZ", POSIX_TIMEZONE, 1);
+
+    while(true) {
+        if(aon_timer_is_initialised) {
+            get_time_utc(&ts);
+            pico_localtime_r(&(ts.tv_sec), &tm);
+            strftime(timestamp, sizeof(timestamp), "%a %H:%M:%S", &tm);
+        } else {
+            snprintf(timestamp, sizeof(timestamp), "--:--:--");
+        }
+        puts(timestamp);
+
+        sleep_ms(5000);
+    }
 }
