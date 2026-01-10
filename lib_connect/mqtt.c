@@ -25,7 +25,7 @@ static mqtt_msg_buf_t mqtt_msg_buf;
 static ip_addr_t mqtt_server_ip;
 
 // function declarations
-static void mqtt_connection_cb(mqtt_client_t *client, void *userdata, mqtt_connection_status_t status);
+static void mqtt_status_cb(mqtt_client_t *client, void *userdata, mqtt_connection_status_t status);
 
 
 // function definitions
@@ -33,6 +33,8 @@ static void mqtt_connection_cb(mqtt_client_t *client, void *userdata, mqtt_conne
 static void mqtt_pub_request_cb(__unused void *arg, err_t err) {
     if (err != 0) {
         printf("pub_request_cb failed %d", err);
+    } else {
+        puts("pub_request OK");
     }
 }
 
@@ -97,13 +99,12 @@ static void mqtt_subscribe_worker_cb(async_context_t *ctx, async_at_time_worker_
 
 static void mqtt_connect_cb(async_context_t *ctx, async_at_time_worker_t *p_mqtt_connect_worker) {
     if (network_is_up) {
-        // the mqtt_connect_client_info is passed in p_mqtt_connect_worker->user_data
         printf("mqtt_connect_worker_cb: connecting as %s\n", mqtt_connect_client_info.client_id);
         err_t err = mqtt_client_connect(
             &mqtt_client,               // client
             &mqtt_server_ip,            // ip_addr
             MQTT_PORT,                  // port
-            mqtt_connection_cb,         // cb (connection state change callback)
+            mqtt_status_cb,             // cb (connection state change callback)
             NULL,                       // arg (userdata passed to callback)
             &mqtt_connect_client_info   // client_info
         );
@@ -122,22 +123,22 @@ static void mqtt_connect_cb(async_context_t *ctx, async_at_time_worker_t *p_mqtt
 static async_at_time_worker_t mqtt_connect_worker = { .do_work = mqtt_connect_cb };
 
 // function called by lwIP MQTT when the status of the server connection changes
-static void mqtt_connection_cb(mqtt_client_t *client, void *userdata, mqtt_connection_status_t status) {
+static void mqtt_status_cb(mqtt_client_t *client, void *userdata, mqtt_connection_status_t status) {
     static async_at_time_worker_t mqtt_subscribe_worker = { 
         .do_work = mqtt_subscribe_worker_cb,
         .user_data = MQTT_SUBSCRIBE_TOPIC 
     };
     if (status == MQTT_CONNECT_ACCEPTED) {
-        puts("mqtt_connection_cb: connection accepted");
+        puts("mqtt_status_cb: connection accepted");
         // subscribe to topics (one worker per topic)
         async_context_add_at_time_worker_in_ms(ctx, &mqtt_subscribe_worker, 0);
     } else {
         if (status == MQTT_CONNECT_DISCONNECTED) {
-            puts("mqtt_connection_cb: disconnected");
+            puts("mqtt_status_cb: disconnected");
         } else if (status == MQTT_CONNECT_TIMEOUT) {
-            puts("mqtt_connection_cb: timed out");
+            puts("mqtt_status_cb: timed out");
         } else {
-            printf("mqtt_connection_cb: refused (%d)\n", status);
+            printf("mqtt_status_cb: refused (%d)\n", status);
         }
         // if the network is up then try to reconnect, otherwise netif_ext_cb() will launch
         // another attempt when the network returns
@@ -148,7 +149,7 @@ static void mqtt_connection_cb(mqtt_client_t *client, void *userdata, mqtt_conne
 }
 
 static void dns_query_cb(const char *hostname, const ip_addr_t *addr_ptr, void *arg) {
-    async_at_time_worker_t *p_dns_lookup_worker = (async_at_time_worker_t *)arg;
+    async_at_time_worker_t *p_dns_lookuworker_ptr = (async_at_time_worker_t *)arg;
     if (addr_ptr) {
         mqtt_server_ip = *addr_ptr;
         printf("%s is at %s\n", hostname, inet_ntoa(mqtt_server_ip));
@@ -161,9 +162,9 @@ static void dns_query_cb(const char *hostname, const ip_addr_t *addr_ptr, void *
 }
 
 // look up MQTT server address
-static void get_server_ip(async_context_t *ctx, async_at_time_worker_t *p_worker) {
+static void get_server_ip(async_context_t *ctx, async_at_time_worker_t *p_dns_lookuworker_ptr) {
     printf("dns lookup %s\n", MQTT_SERVER);
-    err_t result = dns_gethostbyname(MQTT_SERVER, &mqtt_server_ip, dns_query_cb, p_worker);
+    err_t result = dns_gethostbyname(MQTT_SERVER, &mqtt_server_ip, dns_query_cb, p_dns_lookuworker_ptr);
     if (result == ERR_OK) {
         printf("%s is at %s\n", MQTT_SERVER, inet_ntoa(mqtt_server_ip));
         // connect to server
@@ -172,7 +173,7 @@ static void get_server_ip(async_context_t *ctx, async_at_time_worker_t *p_worker
         puts("dns query in progress");
     } else {
         puts("dns error");
-        async_context_add_at_time_worker_in_ms(ctx, p_worker, DNS_RETRY_MS);
+        async_context_add_at_time_worker_in_ms(ctx, p_dns_lookuworker_ptr, DNS_RETRY_MS);
     }
 }
 
@@ -190,10 +191,39 @@ void start_mqtt() {
         printf("MQTT client id %s\n", mqtt_connect_client_info.client_id);
     }
 
-    // link to our functions for incoming and outgoing messages
+    // link to our functions for incoming messages
     mqtt_set_inpub_callback(&mqtt_client, mqtt_incoming_publish_cb, mqtt_incoming_data_cb, &mqtt_msg_buf);
 
     // look up the MQTT server IP and start a connection
     static async_at_time_worker_t dns_lookup_worker = { .do_work = get_server_ip };
     async_context_add_at_time_worker_in_ms(ctx, &dns_lookup_worker, 0);
+}
+
+// simple publish function (may be called asynchronously) 
+typedef struct {
+    const char *topic;
+    const void *payload;
+    uint16_t payload_length
+} mqtt_msg_t;
+static void publish_cb(async_context_t *ctx, async_at_time_worker_t *worker_ptr) {
+    mqtt_msg_t *msg_ptr = (mqtt_msg_t *)worker_ptr->user_data;
+    err_t err = mqtt_publish(
+        &mqtt_client, 
+        msg_ptr->topic,
+        msg_ptr->payload,
+        msg_ptr->payload_length,
+        0,                      // QoS
+        0,                      // retain
+        mqtt_pub_request_cb,    // callback
+        NULL                    // callback arg
+    );
+}
+void publish_mqtt(const char *topic, const void *payload, uint16_t payload_length) {
+    static mqtt_msg_t msg;
+    static async_at_time_worker_t publish_worker = { .do_work = publish_cb, .user_data = &msg };
+    printf("MQTT publish: %s\n", topic);
+    msg.topic = topic;
+    msg.payload = payload;
+    msg.payload_length = payload_length;
+    async_context_add_at_time_worker_in_ms(ctx, &publish_worker, 0);
 }

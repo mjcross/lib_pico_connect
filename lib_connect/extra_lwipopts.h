@@ -21,7 +21,7 @@
 //* SNTP_CHECK_RESPONSE >= 2 requires SNTP_GET_SYSTEM_TIME()
 #define SNTP_CHECK_RESPONSE         2
 
-// do NOT use SNTP roundtrip compensation with the rp2040 aon_timer
+// do NOT use SNTP roundtrip compensation with the rp2040 aon_timer,
 // because it has a resolution of only 1 second (see CMakeLists.txt)
 #ifdef DISABLE_SNTP_COMP_ROUNDTRIP
 #define   SNTP_COMP_ROUNDTRIP       0

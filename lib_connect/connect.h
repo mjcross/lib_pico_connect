@@ -7,6 +7,8 @@
 // public API
 extern volatile bool network_is_up;
 extern async_context_t *ctx;
+
 void connect();
+void publish_mqtt(const char *topic, const void *payload, uint16_t payload_length);
 
 #endif // CONNECT_H

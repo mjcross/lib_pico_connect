@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>     // for setenv()
+#include "string.h"     // for strlen()
 #include "pico/stdlib.h"
 #include "lib_connect/connect.h"
 
@@ -31,6 +32,9 @@ int main()
             snprintf(timestamp, sizeof(timestamp), "--:--:--");
         }
         puts(timestamp);
+
+        // use the library's async-safe MQTT publish function (QoS = 0)
+        publish_mqtt("time", timestamp, 1 + strlen(timestamp));
 
         sleep_ms(5000);
     }
