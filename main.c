@@ -3,8 +3,6 @@
 #include "pico/stdlib.h"
 #include "lib_connect/connect.h"
 
-#define POSIX_TIMEZONE "BST0GMT,M3.5.0/1,M10.5.0/2"     // POSIX timezone for UK GMT/BST 
-
 // Note: the library requires some additional configuration options
 // for lwIP, so be sure to #include lib_connect/extra_lwipopts.h in
 // your lwipopts.h file.
