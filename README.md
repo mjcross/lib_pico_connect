@@ -1,11 +1,11 @@
 # A library for simpler MQTT and network time on the RPi Pico-W
 A 'C' library to make it easier to use MQTT and network time in Pico projects.
 
-The Pico SDK provides excellent networking support via the widely-used 3rd party lightweight IP stack (lwIP). This provides built-in clients for various [applications](https://www.nongnu.org/lwip/2_0_x/group__apps.html) including MQTT and the simple network time protocol SNTP.
+The Pico SDK provides excellent networking support via the widely-used 3rd party lightweight IP stack 'lwIP'. This provides built-in clients for various [applications](https://www.nongnu.org/lwip/2_0_x/group__apps.html) including MQTT and the simple network time protocol SNTP.
 
 However using these clients in your application involves quite a lot of boilerplate and familiarity with the workings of lwIP.
 
-The purpose of this library therefore is to provide a simple way  to get your application off the ground without having to learn all the details. And while it may not expose every feature of the protocols it should at least provide a framework to build on.
+The purpose of this library is therefore to provide a simple way to get your application off the ground without having to learn all the details. And while it may not expose every feature of the protocols it should at least provide a framework to build on.
 
 In case you are asking why this all seems to be so difficult, have a quick look at the [Behind the scenes](#behind-the-scenes) section below.
 
@@ -14,7 +14,7 @@ Start by cloning the repository. It contains a simple VS Code example project th
 
 > Note: if your MQTT server needs a login, certificates or SSL then you'll have to add those yourself (e.g. see [here](https://github.com/raspberrypi/pico-examples/tree/master/pico_w/wifi/mqtt)). 
 
-To use the example you must **create the file** `lib_connect/private_settings.h` that contains your WiFi login and the hostname of your MQTT server. It should looking something like this:
+To use the example you must **create the file** `lib_connect/private_settings.h` that contains your WiFi login and the hostname of your MQTT server. It should look something like this:
 
 ```
 #define MQTT_SERVER "your.mqtt.server.address"
@@ -25,7 +25,7 @@ To use the example you must **create the file** `lib_connect/private_settings.h`
 ### To use the library in your own code:
 
 1. copy the `lib_connect` folder into your project
-2. create the `private_settings.h` file as described above (or define those settings in your environment)
+2. create the `private_settings.h` file as described above, or define the corresponding settings in your environment
 3. copy the `lwipopts.h` file into your project folder, making any customisations you require
     
     *Note: if you use a 'stock' `lwipopts.h` file then add `#include "lib_connect/extra_lwipopts.h"` to it somewhere near the top or manually add the extra settings from that file.*
@@ -58,7 +58,7 @@ To work around this the Pico SDK uses a mechanism called an `async_context`. Thi
 
 You can read more about asynchronous contexts in the [pico_arch_cyw43](https://www.raspberrypi.com/documentation/pico-sdk/networking.html#group_pico_cyw43_arch) and [pico_async_context](https://www.raspberrypi.com/documentation/pico-sdk/high_level.html#group_pico_async_context) sections of the SDK docs; but from a practical perspective it means that to call a lwIP function you add a *worker* structure containing a callback.
 
-A simple example might look a bit like this:
+A simple example might look like this:
 ```
 static void start_sntp_cb(async_context_t *ctx, async_at_time_worker_t *p_worker) {
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
@@ -69,6 +69,6 @@ void start_sntp() {
     async_context_add_at_time_worker_in_ms(ctx, &start_sntp_worker, 0);
 }
 ```
-Here `start_sntp()` is a user-facing function that might be called at any time (*asynchronously*). It creates a worker that references the callback function `start_sntp_cb()` and schedules it to be run by the async context. The two functions in the callback are the lwIP API calls themselves.
+Here `start_sntp()` is a user-facing function that might be called at any time, i.e. *asynchronously*. It creates a worker that references the callback function `start_sntp_cb()` and schedules it to be run by the async context. The two functions in the callback are the lwIP API calls themselves.
 
 Another part of the story is that lwIP functions tend to be non-blocking calls that fire a user-provided callback when they have something to report. This tends to lead to state-machine type code that isn't always easy to follow.
