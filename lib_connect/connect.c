@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2026 mjcross
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
