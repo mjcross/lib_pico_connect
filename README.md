@@ -54,7 +54,7 @@ So why is all this so difficult?
 
 A significant factor is that the lightweight IP stack, a third party component, is *non-reentrant*. This means that if you call a lwIP function while another is in progress, bad things will sooner or later happen.
 
-To work around this the Pico SDK uses a mechanism called an `async_context`. This guarantees that lwIP functions are only called one-by-one and never concurrently. It also (normally) looks after stuff that goes on in the backgorund to keep lwIP and the WiFi driver happy and talking to each other.
+To work around this the Pico SDK uses a mechanism called an `async_context`. This guarantees that lwIP functions are only called one-by-one and never concurrently. It also (normally) looks after stuff that goes on in the background to keep lwIP and the WiFi driver happy and talking to each other.
 
 You can read more about asynchronous contexts in the [pico_arch_cyw43](https://www.raspberrypi.com/documentation/pico-sdk/networking.html#group_pico_cyw43_arch) and [pico_async_context](https://www.raspberrypi.com/documentation/pico-sdk/high_level.html#group_pico_async_context) sections of the SDK docs; but from a practical perspective it means that to call a lwIP function you add a *worker* structure containing a callback.
 
