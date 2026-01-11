@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>         // for setenv()
+#include "string.h"         // for strlen()
 #include "pico/stdlib.h"
 #include "pico/async_context.h"
 #include "lwip/apps/sntp.h"
@@ -7,6 +9,7 @@
 #include "pico/mutex.h"
 #include "pico/util/datetime.h"
 
+#include "settings.h"
 #include "connect.h"
 
 volatile bool aon_timer_is_initialised = false;
@@ -56,6 +59,18 @@ int get_time_utc(struct timespec *ts_ptr) {
     return retval;
 }
 
+// return string representation of date and time - in local timezone if specified (see settings.h)
+const char *get_timestamp() {
+    static char timestamp[20];
+    struct timespec ts;
+    struct tm tm;
+    get_time_utc(&ts);
+    pico_localtime_r(&(ts.tv_sec), &tm);
+    strftime(timestamp, sizeof(timestamp), "%a %H:%M:%S", &tm);
+    snprintf(timestamp + strlen(timestamp), sizeof(timestamp) - strlen(timestamp), ".%03ld", ts.tv_nsec / 1000000);
+    return timestamp;
+}
+
 // functions to asynchronously start and stop the client
 static void start_sntp_cb(async_context_t *ctx, async_at_time_worker_t *p_worker) {
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
@@ -63,6 +78,9 @@ static void start_sntp_cb(async_context_t *ctx, async_at_time_worker_t *p_worker
 }
 void start_sntp() {
     puts("starting SNTP");
+    #ifdef POSIX_TIMEZONE
+    setenv("TZ", POSIX_TIMEZONE, 1);
+    #endif
     static async_at_time_worker_t start_sntp_worker = { .do_work = start_sntp_cb };
     async_context_add_at_time_worker_in_ms(ctx, &start_sntp_worker, 0);
 }

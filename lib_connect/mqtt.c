@@ -19,6 +19,7 @@ typedef struct {
 } mqtt_msg_buf_t;
 
 // shared local variables
+volatile bool mqtt_is_up = false;
 static mqtt_client_t mqtt_client;
 static struct mqtt_connect_client_info_t mqtt_connect_client_info = { .keep_alive = 60 };   // client ID added in start_mqtt()
 static mqtt_msg_buf_t mqtt_msg_buf;
@@ -33,8 +34,6 @@ static void mqtt_status_cb(mqtt_client_t *client, void *userdata, mqtt_connectio
 static void mqtt_pub_request_cb(__unused void *arg, err_t err) {
     if (err != 0) {
         printf("pub_request_cb failed %d", err);
-    } else {
-        puts("pub_request OK");
     }
 }
 
@@ -130,11 +129,13 @@ static void mqtt_status_cb(mqtt_client_t *client, void *userdata, mqtt_connectio
     };
     if (status == MQTT_CONNECT_ACCEPTED) {
         puts("mqtt_status_cb: connection accepted");
+        mqtt_is_up = true;
         // subscribe to topics (one worker per topic)
         async_context_add_at_time_worker_in_ms(ctx, &mqtt_subscribe_worker, 0);
     } else {
         if (status == MQTT_CONNECT_DISCONNECTED) {
             puts("mqtt_status_cb: disconnected");
+            mqtt_is_up = false;
         } else if (status == MQTT_CONNECT_TIMEOUT) {
             puts("mqtt_status_cb: timed out");
         } else {

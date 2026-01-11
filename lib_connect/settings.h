@@ -10,4 +10,6 @@
 #define MQTT_SUBSCRIBE_TOPIC        "test/#"
 #define MQTT_CLIENT_NAME_PREFIX     "client-"
 
+#define POSIX_TIMEZONE              "BST0GMT,M3.5.0/1,M10.5.0/2"     // POSIX timezone (in this case, UK GMT/BST)
+
 #endif

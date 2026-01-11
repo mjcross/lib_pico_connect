@@ -7,6 +7,7 @@ void start_sntp();
 void stop_sntp();
 
 int get_time_utc(struct timespec *ts_ptr);
+const char *get_timestamp();
 
 extern volatile bool aon_timer_is_initialised;
 

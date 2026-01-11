@@ -28,6 +28,7 @@ static void network_status_cb(struct netif *netif, u16_t reason, const netif_ext
     if (reason & LWIP_NSC_LINK_CHANGED && args->link_changed.state == 0) {
         puts("netif_ext_cb: link down");
         network_is_up = false;
+        mqtt_is_up = false;
         stop_sntp();
     }
 }
