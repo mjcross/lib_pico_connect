@@ -17,8 +17,8 @@ Start by cloning the repository. It contains a simple VS Code example project th
 To use the example you must **create the file** `lib_connect/private_settings.h` that contains your WiFi login and the hostname of your MQTT server. It should look something like this:
 
 ```
-#define MQTT_SERVER "your.mqtt.server.address"
-#define WIFI_SSID "your WiFi network hostname or IP"
+#define MQTT_SERVER "your.mqtt.server.hostname or IP"
+#define WIFI_SSID "your WiFi network name"
 #define WIFI_PASSWORD "your WiFi password"
 ```
 
