@@ -72,3 +72,5 @@ void start_sntp() {
 Here `start_sntp()` is a user-facing function that might be called at any time, i.e. *asynchronously*. It creates a worker that references the callback function `start_sntp_cb()` and schedules it to be run by the async context. The two functions in the callback are the lwIP API calls themselves.
 
 Another part of the story is that lwIP functions tend to be non-blocking calls that fire a user-provided callback when they have something to report. This tends to lead to state-machine type code that isn't always easy to follow.
+
+The bottom line is that it's all quite rational and manageable... once you know what's going on. However the initial learning curve is pretty steep and requires you to integrate a few different concepts.
