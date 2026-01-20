@@ -210,7 +210,7 @@ void start_mqtt() {
 typedef struct {
     const char *topic;
     const void *payload;
-    uint16_t payload_length
+    uint16_t payload_length;
 } mqtt_msg_t;
 static void publish_cb(async_context_t *ctx, async_at_time_worker_t *worker_ptr) {
     mqtt_msg_t *msg_ptr = (mqtt_msg_t *)worker_ptr->user_data;
