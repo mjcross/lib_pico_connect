@@ -39,6 +39,14 @@ static void network_status_cb(struct netif *netif, u16_t reason, const netif_ext
     }
 }
 
+
+//* USEFUL: int cyw43_tcpip_link_status (cyw43_t * self, int itf)
+//*         returns link AND IP address status (see cyw43_driver)
+//*         apparently there is a status_name() function to describe the status code
+//*
+//* For documentation on lwIP DHCP see https://www.nongnu.org/lwip/2_1_x/dhcp_8c.html
+//*         I think you can check the dhcp state in netif->dhcp->state
+
 // connect to WiFi and install the network status callback
 static void connect_worker_cb(async_context_t *ctx, async_at_time_worker_t *p_worker) {
     static netif_ext_callback_t netif_ext_status;
